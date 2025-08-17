@@ -1,45 +1,36 @@
-Part 1: Create Product API (create_product)
-Changes Made
+This repository contains my solution for the Bynry Backend Intern Case Study. It includes bug fixes, database schema design, and API implementation.
 
-Input Validation Added
+ Repository Structure
+├── createproduct.py   # Fixed "Create Product" API
+├── database.py        # Database schema (SQLAlchemy ORM)
+├── lowstock.py        # Low-stock alerts API
+├── requirements.txt   # Dependencies (Flask + SQLAlchemy)
+└── README.md      
 
-Required fields (name, sku) checked.
 
-price validated as decimal and cannot be negative.
 
-initial_quantity validated as a non-negative integer.
+Part 1: Code Review & Debugging
+ProblemS :
+The original create_product endpoint had several issues:
+Product tied directly to one warehouse → violates requirement (multi-warehouse support)
+No SKU uniqueness check
+Price was not validated as decimal (risk of negative/invalid inputs)
+No proper transaction handling → risk of inconsistent data
+Required fields not validated → could crash if missing
+Committed twice (inefficient and unsafe)
 
-SKU Uniqueness Check
+Fixes Made
+-Input Validation: Added data.get(), required fields check.
+-SKU Uniqueness: Enforced uniqueness before insert.
+-Price Handling: Price stored as Decimal, rejects invalid/negative prices.
+-Default Quantity: Initial quantity defaults to 0 if not provided.
+-Decoupled Product: Product created globally, not tied to a single warehouse.
+-Separate Inventory: Inventory record linked separately to the warehouse.
+-Atomic Transactions: Used a single transaction for product + inventory creation.
+-Error Handling: Added proper handling for IntegrityError and generic Exception.
+-Clear Responses: Returns human-friendly JSON responses.
 
-Prevents creation of duplicate products with the same SKU.
-
-Transaction Safety
-
-Used db.session.flush() to get product.id before creating inventory.
-
-Wrapped DB operations in try/except with rollback on failure.
-
-Product ↔ Inventory Linking
-
-Product created globally (unique SKU).
-
-Inventory created per warehouse.
-
-If inventory exists, stock is incremented instead of creating duplicates.
-
-Meaningful API Responses
-
-Returns success message + product ID, SKU, warehouse ID, and quantity.
-
-Returns clear error messages (400 for validation, 409 for duplicates, 500 for server issues).
-
-💡 Logic
-
-Separation of product definition and inventory ensures clean data modeling.
-
-Validation ensures system integrity (no negative prices/stock, no duplicates).
-
-Rollbacks protect database consistency.
+File: createproduct.py
 
 
 
@@ -48,40 +39,35 @@ Rollbacks protect database consistency.
 
 
 
-Part 2: Database Schema (database.py)
-Changes Made
 
-Normalization
+Part 2: Database Schema Design
+Requirements Addressed :- Companies can have multiple warehouses.
 
-Created three tables:
+Products can exist in multiple warehouses with different stock quantities.
+Track inventory changes over time.
+Suppliers provide products.
+Products can be bundles (kits).
 
-products (global info)
+Schema Implemented
+Company → Owns warehouses
+Warehouse → Belongs to a company
+Product → Global entity with a unique SKU
+Inventory → Maps products to warehouses with a stock quantity
+InventoryHistory → Logs all stock changes for auditing
+Supplier → Contains supplier information
+ProductSupplier → Many-to-Many relationship between suppliers and products
+Bundle → Defines a parent product made of child products
 
-warehouses (locations)
 
-inventories (stock levels)
+Key Decisions & Assumptions
+SKU uniqueness is enforced at the database level.
+Inventory table solves the multi-warehouse problem.
+InventoryHistory allows for a complete audit trail.
+ProductSupplier table supports multiple suppliers per product.
+Bundle table supports kits by reusing existing products.
+Timestamps are stored in UTC.
 
-Relationships
-
-Product ↔ Inventory = one-to-many.
-
-Warehouse ↔ Inventory = one-to-many.
-
-Together, this models a many-to-many relationship between products and warehouses.
-
-Constraints
-
-sku marked unique at database level.
-
-quantity defaults to 0.
-
-💡 Logic
-
-Keeps data normalized and scalable (a product can be in many warehouses).
-
-Enforces business rules at schema level (unique SKUs, valid foreign keys).
-
-Prevents accidental duplicate product-warehouse mappings.
+File: database.py
 
 
 
@@ -89,59 +75,43 @@ Prevents accidental duplicate product-warehouse mappings.
 
 
 
-Part 3: Low Stock Endpoint (get_low_stock)
- Changes Made
+🔹 Part 3: API Implementation – Low Stock Alerts
+Endpoint : GET /api/companies/{company_id}/alerts/low-stock
 
-Configurable Threshold
+Business Rules Covered
+Low stock threshold can vary by product.
+Alerts are only triggered for recently sold products.
+Considers stock across multiple warehouses for a single company.
+Includes supplier info for easy reordering.
+Calculates an estimated number of days until stockout based on the recent sales rate.
 
-Query param ?threshold=VALUE (default = 10).
 
-Optional Warehouse Filter
+Edge Cases Handled
+No recent sales → no alert is generated.
+Product exists but has no assigned suppliers → handled gracefully.
+Stock is already zero → days until stockout is 0.
 
-Query param ?warehouse_id=ID to restrict results to one warehouse.
-
-Structured Response
-
-Returns list of items:
-
+Response Format
+JSON
 {
-  "product_id": 1,
-  "sku": "ABC123",
-  "name": "Laptop",
-  "warehouse_id": 2,
-  "quantity": 5
+  "alerts": [
+    {
+      "product_id": 123,
+      "product_name": "Widget A",
+      "sku": "WID-001",
+      "warehouse_id": 456,
+      "warehouse_name": "Main Warehouse",
+      "current_stock": 5,
+      "threshold": 20,
+      "days_until_stockout": 12,
+      "supplier": {
+        "id": 789,
+        "name": "Supplier Corp",
+        "contact_email": "orders@supplier.com"
+      }
+    }
+  ],
+  "total_alerts": 1
 }
 
-
-Includes count of total low-stock items.
-
-💡 Logic
-
-Threshold flexibility supports different alerting policies.
-
-Warehouse filter helps managers focus on their branch.
-
-JSON format is frontend-friendly for dashboards.
-
-
-
-
-
-
-
-
-
-Assumptions Made
-
-SKU is unique across the system.
-
-Product can exist in multiple warehouses, but inventory is warehouse-specific.
-
-Negative stock is not allowed (no backorders).
-
-Price may be optional during product creation.
-
-Warehouse IDs provided are assumed valid (basic validation not shown).
-
-Authentication/authorization is not in scope for this case study.
-
+File: lowstock.py
