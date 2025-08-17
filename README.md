@@ -6,7 +6,7 @@ This repository contains my solution for the Bynry Backend Intern Case Study. It
 ├── lowstock.py        # Low-stock alerts API
 ├── requirements.txt   # Dependencies (Flask + SQLAlchemy)
 └── README.md          # Documentation
- Part 1: Code Review & Debugging
+🔹 Part 1: Code Review & Debugging
 Problem
 The original create_product endpoint had several issues:
 
@@ -23,27 +23,27 @@ Required fields not validated → could crash if missing
 Committed twice (inefficient and unsafe)
 
 Fixes Made
- Input Validation: Added data.get(), required fields check.
+✅ Input Validation: Added data.get(), required fields check.
 
- SKU Uniqueness: Enforced uniqueness before insert.
+✅ SKU Uniqueness: Enforced uniqueness before insert.
 
- Price Handling: Price stored as Decimal, rejects invalid/negative prices.
+✅ Price Handling: Price stored as Decimal, rejects invalid/negative prices.
 
- Default Quantity: Initial quantity defaults to 0 if not provided.
+✅ Default Quantity: Initial quantity defaults to 0 if not provided.
 
- Decoupled Product: Product created globally, not tied to a single warehouse.
+✅ Decoupled Product: Product created globally, not tied to a single warehouse.
 
- Separate Inventory: Inventory record linked separately to the warehouse.
+✅ Separate Inventory: Inventory record linked separately to the warehouse.
 
- Atomic Transactions: Used a single transaction for product + inventory creation.
+✅ Atomic Transactions: Used a single transaction for product + inventory creation.
 
- Error Handling: Added proper handling for IntegrityError and generic Exception.
+✅ Error Handling: Added proper handling for IntegrityError and generic Exception.
 
- Clear Responses: Returns human-friendly JSON responses.
+✅ Clear Responses: Returns human-friendly JSON responses.
 
 File: createproduct.py
 
- Part 2: Database Schema Design
+🔹 Part 2: Database Schema Design
 Requirements Addressed
 Companies can have multiple warehouses.
 
@@ -87,7 +87,7 @@ Timestamps are stored in UTC.
 
 File: database.py
 
- Part 3: API Implementation – Low Stock Alerts
+🔹 Part 3: API Implementation – Low Stock Alerts
 Endpoint
 GET /api/companies/{company_id}/alerts/low-stock
 
