@@ -10,36 +10,36 @@ This repository contains my solution for the Bynry Backend Intern Case Study. It
 Problem
 The original create_product endpoint had several issues:
 
-Product tied directly to one warehouse → violates requirement (multi-warehouse support)
+Product was tied directly to one warehouse, which violates the multi-warehouse support requirement.
 
-No SKU uniqueness check
+No SKU uniqueness check was performed.
 
-Price was not validated as decimal (risk of negative/invalid inputs)
+Price was not validated as a decimal, risking negative or invalid inputs.
 
-No proper transaction handling → risk of inconsistent data
+Lacked proper transaction handling, creating a risk of inconsistent data.
 
-Required fields not validated → could crash if missing
+Required fields were not validated, which could crash the server if they were missing.
 
-Committed twice (inefficient and unsafe)
+The code committed to the database twice, which is inefficient and unsafe.
 
 Fixes Made
-✅ Input Validation: Added data.get(), required fields check.
+✅ Input Validation: Added data.get() and checks for required fields.
 
-✅ SKU Uniqueness: Enforced uniqueness before insert.
+✅ SKU Uniqueness: Enforced uniqueness before inserting a new product.
 
-✅ Price Handling: Price stored as Decimal, rejects invalid/negative prices.
+✅ Price Handling: Price is stored as a Decimal and rejects invalid or negative prices.
 
-✅ Default Quantity: Initial quantity defaults to 0 if not provided.
+✅ Default Quantity: The initial quantity now defaults to 0 if not provided.
 
-✅ Decoupled Product: Product created globally, not tied to a single warehouse.
+✅ Decoupled Product: Products are now created globally and are not tied to a single warehouse.
 
-✅ Separate Inventory: Inventory record linked separately to the warehouse.
+✅ Separate Inventory: Inventory records are linked separately to the warehouse.
 
-✅ Atomic Transactions: Used a single transaction for product + inventory creation.
+✅ Atomic Transactions: Used a single transaction for creating both the product and inventory records.
 
 ✅ Error Handling: Added proper handling for IntegrityError and generic Exception.
 
-✅ Clear Responses: Returns human-friendly JSON responses.
+✅ Clear Responses: The API now returns human-friendly JSON responses.
 
 File: createproduct.py
 
@@ -49,7 +49,7 @@ Companies can have multiple warehouses.
 
 Products can exist in multiple warehouses with different stock quantities.
 
-Track inventory changes over time.
+Inventory changes are tracked over time.
 
 Suppliers provide products.
 
@@ -75,13 +75,13 @@ Bundle → Defines a parent product made of child products
 Key Decisions & Assumptions
 SKU uniqueness is enforced at the database level.
 
-Inventory table solves the multi-warehouse problem.
+The Inventory table solves the multi-warehouse problem.
 
-InventoryHistory allows for a complete audit trail.
+The InventoryHistory table allows for a complete audit trail.
 
-ProductSupplier table supports multiple suppliers per product.
+The ProductSupplier table supports multiple suppliers per product.
 
-Bundle table supports kits by reusing existing products.
+The Bundle table supports kits by reusing existing products.
 
 Timestamps are stored in UTC.
 
@@ -92,7 +92,7 @@ Endpoint
 GET /api/companies/{company_id}/alerts/low-stock
 
 Business Rules Covered
-Low stock threshold can vary by product.
+The low stock threshold can vary by product.
 
 Alerts are only triggered for recently sold products.
 
@@ -103,11 +103,11 @@ Includes supplier info for easy reordering.
 Calculates an estimated number of days until stockout based on the recent sales rate.
 
 Edge Cases Handled
-No recent sales → no alert is generated.
+If there are no recent sales, no alert is generated.
 
-Product exists but has no assigned suppliers → handled gracefully.
+If a product exists but has no assigned suppliers, it is handled gracefully.
 
-Stock is already zero → days until stockout is 0.
+If the stock is already zero, the days until stockout is 0.
 
 Response Format
 JSON
